@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Assignment 3: Blocky World</title>
+    <link rel="stylesheet" href="styles/styles.css">
+  </head>
+
+  <body onload="main()">
+    <div class="container">
+        <div class="column1">
+            <div class="canvas">
+            <canvas id="webgl" width="400" height="400">
+                Please use a browser that supports "canvas"
+            </canvas>
+            </div>
+        </div>
+        <div class="column2">
+            <h2>Assignment 3: Blocky World!</h2>
+            <p>
+                Alison Sun
+        
+            <p>
+            <p id="numdot"></p>
+            🐰 Kick Hind Leg (L) <input type="range" min="-45" max="-12" value="0" class="slider" id="kickLeft">
+            Animation: <button type="button" id="kickLeftOnButton">✅ On</button>
+            <button type="button" id="kickLeftOffButton">❌ Off</button>
+            <p>
+            🐰 Kick Back Foot (L) <input type="range" min="23" max="46" value="0" class="slider" id="kickLeftFoot">
+            Animation: <button type="button" id="leftFootOnButton">✅ On</button>
+            <button type="button" id="leftFootOffButton">❌ Off</button>
+            <p>
+            🐰 Kick Hind Leg (R) <input type="range" min="-45" max="-12" value="0" class="slider" id="kickRight">
+            Animation: <button type="button" id="rightLegOnButton">✅ On</button>
+            <button type="button" id="rightLegOffButton">❌ Off</button>
+            <p>
+            🐰 Kick Back Foot (R) <input type="range" min="23" max="46" value="0" class="slider" id="kickRightFoot">
+            Animation: <button type="button" id="rightFootOnButton">✅ On</button>
+            <button type="button" id="rightFootOffButton">❌ Off</button>
+            <p>
+            📸 Camera Angle <input type="range" min="25" max="385" value="25" class="slider" id="angleSlide">
+
+        </div>
+    </div>
+
+    <script src="./lib/webgl-utils.js"></script>
+    <script src="./lib/webgl-debug.js"></script>
+    <script src="./lib/cuon-utils.js"></script>
+    <script src='./lib/cuon-matrix-cse160.js'></script>
+    <script src="./src/Circle.js"></script>
+    <script src="./src/Cube.js"></script>
+    <script src="./src/Point.js"></script>
+    <script src="./src/Triangle.js"></script>
+    <script src="./src/World.js"></script>
+    
+  </body>
+</html>
+

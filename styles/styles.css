@@ -1,0 +1,40 @@
+/* Sources: 
+https://www.w3schools.com/howto/howto_css_two_columns.asp
+https://www.w3schools.com/howto/howto_css_round_buttons.asp
+https://learn.shayhowe.com/html-css/positioning-content/
+https://www.dreamstime.com/cat-stylized-triangle-polygonal-
+    model-contour-tattoo-logo-emblem-design-element-hand-drawn-sketch-cat-cat-stylized-image209463497 
+https://antongerdelan.net/colour/*/
+
+body {
+    background-color: lightblue;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+}
+
+button {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    border-radius: 12px;
+}
+
+.canvas {
+    height: 400px;
+    width: 400px;
+    padding: 20px;
+}
+
+.column1 {
+    width: 40%;
+    display: inline-block;
+}
+
+.column2 {
+    /* float: right; */
+    width: 60%;
+    display: inline-block;
+}
+
+.container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
