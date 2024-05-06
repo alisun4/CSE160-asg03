@@ -1,39 +1,40 @@
 // Vertex shader program
 var VSHADER_SOURCE = `
-  precision mediump float;
-  attribute vec4 a_Position;
-  attribute vec2 a_UV;
-  varying vec2 v_UV;
-  uniform mat4 u_ModelMatrix;
-  uniform mat4 u_GlobalRotateMatrix;
-  uniform mat4 u_ViewMatrix;
-  uniform mat4 u_ProjectionMatrix;
-  void main() {
-    gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
-    v_UV = a_UV;
-  }`
+    precision mediump float;
+    attribute vec4 a_Position;
+    attribute vec2 a_UV;
+    varying vec2 v_UV;
+    uniform mat4 u_ModelMatrix;
+    uniform mat4 u_GlobalRotateMatrix;
+    uniform mat4 u_ViewMatrix;
+    uniform mat4 u_ProjectionMatrix;
+    
+    void main() {
+        gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
+        v_UV = a_UV;
+    }`
 
 // Fragment shader program
 var FSHADER_SOURCE = `
-  precision mediump float;
-  varying vec2 v_UV;
-  uniform vec4 u_FragColor;  // uniform変数
-  uniform sampler2D u_Sampler0;
-  uniform int u_whichTexture;
-  void main() {
-    if (u_whichTexture == 2) {
-        gl_FragColor = u_FragColor;
-    }
-    else if (u_whichTexture == -1) {
-        gl_FragColor = vec4(v_UV, 1.0, 1.0);
-    }
-    else if (u_whichTexture == 0) {
-        gl_FragColor = texture2D(u_Sampler0, v_UV);
-    }
-    else {
-        gl_FragColor = vec4(1,.2,.2,1);
-    }
-  }`
+    precision mediump float;
+    varying vec2 v_UV;
+    uniform vec4 u_FragColor;  // uniform変数
+    uniform sampler2D u_Sampler0;
+    uniform int u_whichTexture;
+    void main() {
+        if (u_whichTexture == -2) {
+            gl_FragColor = u_FragColor;
+        }
+        else if (u_whichTexture == -1) {
+            gl_FragColor = vec4(v_UV, 1.0, 1.0);
+        }
+        else if (u_whichTexture == 0) {
+            gl_FragColor = texture2D(u_Sampler0, v_UV);
+        }
+        else {
+            gl_FragColor = vec4(1,.2,.2,1);
+        }
+    }`
 
 // Global Variables
 let canvas;
@@ -48,6 +49,10 @@ let u_ViewMatrix;
 let u_GlobalRotateMatrix;
 let u_Sampler0;
 let u_whichTexture;
+let g_globalX = 0;
+let g_globalY = 0;
+let g_globalZ = 0;
+let g_origin = [0, 0];
 
 function setupWebGL() {
     // Retrieve <canvas> element
@@ -61,7 +66,7 @@ function setupWebGL() {
         return;
     }
 
-    gl.enable(gl.DEPTH_TEST);
+    //gl.enable(gl.DEPTH_TEST);
 }
 
 function connectVariablestoGLSL() {
@@ -122,6 +127,12 @@ function connectVariablestoGLSL() {
         return;
     }
 
+    u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
+    if (!u_whichTexture) {  
+        console.log('Failed to get the storage location of u_whichTexture');
+        return;
+    }
+
     var identityM = new Matrix4();
     gl.uniformMatrix4fv(u_ModelMatrix, false, identityM.elements);
 
@@ -138,8 +149,8 @@ let g_globalAngle = 25;
 let g_headAngle = 0;
 let g_leftAngle = -12;
 let g_rightAngle = -12;
-let g_leftFootAngle = 0;
-let g_rightFootAngle = 0;
+let g_leftFootAngle = 12;
+let g_rightFootAngle = 12;
 let g_magentaAngle = 0;
 let g_headAnimation = false;
 let g_magentaAnimation = false;
@@ -147,49 +158,47 @@ let g_magentaAnimation = false;
 // Set up actions for the HTML UI elements
 function addActionsforHTMLUI() {
 
+    // Animation On/Off
+    // document.getElementById('rotateHeadOffButton').onclick = function() { g_headAnimation = false; };
+    // document.getElementById('rotateHeadOnButton').onclick = function() { g_headAnimation = true; };
+
     
     // Size slider
     document.getElementById('kickLeft').addEventListener('input', function () { g_leftAngle = this.value; renderAllShapes() });
     document.getElementById('kickLeftFoot').addEventListener('input', function () { g_leftFootAngle = this.value; renderAllShapes() });
     document.getElementById('kickRight').addEventListener('input', function () { g_rightAngle = this.value; renderAllShapes() });
     document.getElementById('kickRightFoot').addEventListener('input', function () { g_rightFootAngle = this.value; renderAllShapes() });
-    document.getElementById('angleSlide').addEventListener('input', function() { g_globalAngle = this.value; renderAllShapes(); });
+    document.getElementById('angleSlide').addEventListener('input', function() { g_globalY = this.value; renderAllShapes(); });
     
 }
 
-// function initTextures() {
-//     // if (!u_Sampler0) {
-//     //     console.log('Failed to get the storage location of u_Sampler0');
-//     //     return false;
-//     // }
+function initTextures() {
+   
+    var image = new Image();
+    if (!image) {
+        console.log('Failed to create the image object');
+        return false;
+    }
+    image.onload = function(){ sendImagetoTexture0(image);}
+    image.src = 'bookshelf.jpg';
 
-//     var image = new Image();
-//     if (!image) {
-//         console.log('Failed to create the image object');
-//         return false;
-//     }
+    return true;
+}
 
-//     image.onload = function(){ sendImagetoTexture0(0, u_Sampler0, image);}
-//     image.src = 'bookshelf.jpg';
-
-//     return true;
-// }
-
-// function sendImagetoTexture0(image) {
-//     var texture = gl.createTexture();
-//     if (!texture) {
-//         console.log('Failed to create the texture object');
-//         return false;
-//     }
-
-//     gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
-//     gl.activeTexture(gl.TEXTURE0);
-//     gl.bindTexture(gl.TEXTURE_2D, texture);
-//     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-//     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
-//     gl.uniform1i(u_Sampler, 0);
-//     console.log('Finished loadTexture');
-// }
+function sendImagetoTexture0(image) {
+    var texture = gl.createTexture();
+    if (!texture) {
+        console.log('Failed to create the texture object');
+        return false;
+    }
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+    gl.uniform1i(u_Sampler0, 0);
+    console.log('Finished loadTexture');
+}
 
 function main() {
     setupWebGL();
@@ -198,13 +207,7 @@ function main() {
 
     addActionsforHTMLUI();
 
-    // Register function (event handler) to be called on a mouse press
-    // canvas.onmousedown = click;
-    canvas.onmousedown = origin;
-
-    canvas.onmousemove = function(ev) { if (ev.buttons == 1) { click(ev) } };
-
-    // initTextures(gl, 0);
+    initTextures();
 
     // Specify the color for clearing <canvas>
     gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -234,10 +237,16 @@ function origin(ev) {
 
 function click(ev) {
     let coordinates = convertCoordinatesEventToGL(ev);
-    g_globalX = g_globalX - coordinates[0]*360; // used to be minus for both
+    g_globalX = g_globalX - coordinates[0]*360;
     g_globalY = g_globalY - coordinates[1]*360;
 
     renderAllShapes();
+}
+
+function originCoords(ev) {
+    var x = ev.clientX;
+    var y = ev.clientY;
+    g_origin = [x, y];
 }
 
 function convertCoordinatesEventToGL(ev) {
@@ -266,13 +275,19 @@ function updateAnimationAngles() {
 function renderAllShapes() {
     var startTime = performance.now();
 
+    // var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
+    // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
+
     var projMat = new Matrix4();
     gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
     var viewMat = new Matrix4();
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
-    var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
+    var globalRotMat = new Matrix4(); 
+    // globalRotMat.rotate(g_globalX,1,0,0); // x-axis
+    // globalRotMat.rotate(g_globalY,0,1,0); // y-axis
+    // globalRotMat.rotate(g_globalZ,0,0,1);
     gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -289,6 +304,7 @@ function renderAllShapes() {
 
     var head = new Cube();
     head.color = BROWN;
+    head.textureNum = 0;
     head.matrix.scale(0.45, 0.4, 0.4);
     head.matrix.translate(0, 0.4, -2.125);
     head.matrix.translate(-0.5, -0.5, 0);
@@ -378,19 +394,24 @@ function renderAllShapes() {
 
     var backlegL = new Cube();
     backlegL.color = BROWN;
+    // backlegL.matrix = haunchL.matrix;
     backlegL.matrix = leftCoords;
+    // backlegL.matrix.rotate(-90, 1, 0, 0);
     backlegL.matrix.translate(0, 0, 0.3);
     backlegL.matrix.rotate(280 - g_leftFootAngle, 1, 0, 0);
     backlegL.matrix.translate(0, 0, -0.075 / 2);
+    // backlegL.matrix.translate(0, 0.001, 0.5);
     backlegL.matrix.scale(0.15, 0.5, 0.075);
     backlegL.render();
 
     var backlegR = new Cube();
     backlegR.color = BROWN;
+    // backlegR.matrix = haunchR.matrix;
     backlegR.matrix = rightCoords;
     backlegR.matrix.translate(0, 0, 0.3);
     backlegR.matrix.rotate(280 - g_rightFootAngle, 1, 0, 0);
     backlegR.matrix.translate(0, 0, -0.075 / 2);
+    // backlegL.matrix.translate(0, 0.001, 0.5);
     backlegR.matrix.scale(0.15, 0.5, 0.075);
     backlegR.render();
 
@@ -400,7 +421,7 @@ function renderAllShapes() {
     tail.matrix.translate(-0.5, -1.6, 0);
     tail.matrix.rotate(12, 1, 0, 0);
     tail.render();
-
+    
     var duration = performance.now() - startTime;
 	sendTextToHTML(" ms: " + Math.floor(duration) + " fps: " + Math.floor(10000/duration)/10, "numdot");
 }
@@ -412,4 +433,4 @@ function sendTextToHTML(text, htmlID) {   // we take the text and its htmlID
       return;
     }
     htmlElm.innerHTML = text; // send inner html to whatver the text was
-}
+  }
