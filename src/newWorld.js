@@ -158,11 +158,6 @@ let g_magentaAnimation = false;
 // Set up actions for the HTML UI elements
 function addActionsforHTMLUI() {
 
-    // Animation On/Off
-    // document.getElementById('rotateHeadOffButton').onclick = function() { g_headAnimation = false; };
-    // document.getElementById('rotateHeadOnButton').onclick = function() { g_headAnimation = true; };
-
-    
     // Size slider
     document.getElementById('kickLeft').addEventListener('input', function () { g_leftAngle = this.value; renderAllShapes() });
     document.getElementById('kickLeftFoot').addEventListener('input', function () { g_leftFootAngle = this.value; renderAllShapes() });
@@ -180,7 +175,7 @@ function initTextures() {
         return false;
     }
     image.onload = function(){ sendImagetoTexture0(image);}
-    image.src = 'bookshelf.jpg';
+    image.src = 'bookshelves.jpg';
 
     return true;
 }
@@ -275,19 +270,16 @@ function updateAnimationAngles() {
 function renderAllShapes() {
     var startTime = performance.now();
 
-    // var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0);
-    // gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
-
     var projMat = new Matrix4();
     gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
     var viewMat = new Matrix4();
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
-    var globalRotMat = new Matrix4(); 
-    // globalRotMat.rotate(g_globalX,1,0,0); // x-axis
-    // globalRotMat.rotate(g_globalY,0,1,0); // y-axis
-    // globalRotMat.rotate(g_globalZ,0,0,1);
+    var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0); 
+    globalRotMat.rotate(g_globalX,1,0,0); // x-axis
+    globalRotMat.rotate(g_globalY,0,1,0); // y-axis
+    globalRotMat.rotate(g_globalZ,0,0,1);
     gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
