@@ -20,6 +20,7 @@ var FSHADER_SOURCE = `
     varying vec2 v_UV;
     uniform vec4 u_FragColor;  // uniform変数
     uniform sampler2D u_Sampler0;
+    uniform sampler2D u_Sampler1;
     uniform int u_whichTexture;
     void main() {
         if (u_whichTexture == -2) {
@@ -30,6 +31,9 @@ var FSHADER_SOURCE = `
         }
         else if (u_whichTexture == 0) {
             gl_FragColor = texture2D(u_Sampler0, v_UV);
+        }
+        else if (u_whichTexture == 1) {
+            gl_FragColor = texture2D(u_Sampler1, v_UV);
         }
         else {
             gl_FragColor = vec4(1,.2,.2,1);
@@ -48,6 +52,7 @@ let u_ProjectionMatrix;
 let u_ViewMatrix;
 let u_GlobalRotateMatrix;
 let u_Sampler0;
+let u_Sampler1;
 let u_whichTexture;
 let g_globalX = 0;
 let g_globalY = 0;
@@ -66,7 +71,7 @@ function setupWebGL() {
         return;
     }
 
-    //gl.enable(gl.DEPTH_TEST);
+    gl.enable(gl.DEPTH_TEST);
 }
 
 function connectVariablestoGLSL() {
@@ -127,6 +132,12 @@ function connectVariablestoGLSL() {
         return;
     }
 
+    u_Sampler1 = gl.getUniformLocation(gl.program, 'u_Sampler1');
+    if (!u_Sampler0) {
+        console.log('Failed to get the storage location of u_Sampler1');
+        return;
+    }
+
     u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
     if (!u_whichTexture) {  
         console.log('Failed to get the storage location of u_whichTexture');
@@ -177,6 +188,14 @@ function initTextures() {
     image.onload = function(){ sendImagetoTexture0(image);}
     image.src = 'bookshelves.jpg';
 
+    var image2 = new Image();
+    if (!image2) {
+        console.log('Failed to create the image object');
+        return false;
+    }
+    image2.onload = function(){ sendImagetoTexture1(image2);}
+    image2.src = 'strawberry.jpg';
+
     return true;
 }
 
@@ -192,6 +211,21 @@ function sendImagetoTexture0(image) {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
     gl.uniform1i(u_Sampler0, 0);
+    console.log('Finished loadTexture');
+}
+
+function sendImagetoTexture1(image) {
+    var texture = gl.createTexture();
+    if (!texture) {
+        console.log('Failed to create the texture object');
+        return false;
+    }
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+    gl.uniform1i(u_Sampler1, 1);
     console.log('Finished loadTexture');
 }
 
@@ -269,52 +303,29 @@ function updateAnimationAngles() {
 
 }
 
-var g_eye = [0, 0, 3];
-var g_at = [0, 0, -100];
-var g_up = [0, 1, 0];
-var g_camera = new Camera();
+var g_eye = [0,0,3];
+var g_at = [0,0,-100];
+var g_up = [0,1,0];
+// var g_camera = new Camera();
 
 function keydown(ev) {
     if (ev.keyCode == 65) {     // D
-        g_camera.eye.elements[0] -= 0.2;
+        g_eye[0] -= 0.2;
     }
     else if (ev.keyCode == 68) {    // A
-        g_camera.eye.elements[0] += 0.2;
+        g_eye[0] += 0.2;
     }
     else if (ev.keyCode == 83) {  // S
-        g_camera.eye.elements[2] += 0.2;
+        g_eye[2] += 0.2;
     }
+    
     else if (ev.keyCode == 87) {
-        g_camera.eye.elements[2] -= 0.2;  // W
+        g_eye[2] -= 0.2;  // W
     }
 
     renderAllShapes();
     console.log(ev.keyCode);
 }
-
-var g_map = [
-[1, 1, 1, 1, 1, 1, 1, 1],
-[1, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 1, 1, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 1, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 1],
-[1, 0, 0, 0, 0, 0, 0, 1],
-];
-
-// function drawMap() {
-//     for (x=0; x<8; x++) {
-//         for (y=0; y<8; y++) {
-//             if (g_map[x][y] == 1) {
-//                 var body = new Cube();
-//                 body.color = [1.0, 1.0, 1.0, 1.0];
-//                 body.matrix.translate(x-4, -0.75, y-4);
-//                 body.render();
-//             }
-//         }
-//     }
-// }
 
 function renderAllShapes() {
     var startTime = performance.now();
@@ -324,10 +335,7 @@ function renderAllShapes() {
     gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
     var viewMat = new Matrix4();
-    viewMat.setLookAt(
-        g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2],
-        g_camera.at.elements[0], g_camera.at.elements[1], g_camera.at.elements[2],
-        g_camera.up.elements[0], g_camera.up.elements[1], g_camera.up.elements[2]);
+    viewMat.setLookAt(g_eye[0], g_eye[1], g_eye[2], g_at[0], g_at[1], g_at[2], g_up[0], g_up[1], g_up[2]);
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
     var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0); 
@@ -337,7 +345,6 @@ function renderAllShapes() {
     gl.uniformMatrix4fv(u_GlobalRotateMatrix, false, globalRotMat.elements);
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-    gl.clear(gl.COLOR_BUFFER_BIT);
 
     // Colors
     var BLACK = [0.230, 0.182, 0.182, 1.0];
@@ -358,9 +365,11 @@ function renderAllShapes() {
     floor.color = [1.0, 0.0, 0.0, 1.0];
     floor.textureNum = 1;
     floor.matrix.translate(0, -0.75, 0.0);
-    floor.matrix.scale(10, 0, 10);
+    floor.matrix.scale(10, 0.01, 10);
     floor.matrix.translate(-0.5, 0.0, -0.5);
     floor.render();
+
+    // drawMap();
 
 
     // Bunny head
@@ -413,6 +422,7 @@ function renderAllShapes() {
 
     var body = new Cube();
     body.color = BROWN;
+    body.textureNum = 1;
     body.matrix.rotate(12, 1, 0, 0);
     body.matrix.scale(0.5, 0.4, 0.8);
     body.matrix.translate(-0.5, -1, -0.8);
