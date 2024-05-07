@@ -8,7 +8,7 @@ var VSHADER_SOURCE = `
     uniform mat4 u_GlobalRotateMatrix;
     uniform mat4 u_ViewMatrix;
     uniform mat4 u_ProjectionMatrix;
-    
+    uniform float u_Size;
     void main() {
         gl_Position = u_ProjectionMatrix * u_ViewMatrix * u_GlobalRotateMatrix * u_ModelMatrix * a_Position;
         v_UV = a_UV;
@@ -202,6 +202,8 @@ function main() {
 
     addActionsforHTMLUI();
 
+    document.onkeydown = keydown;
+
     initTextures();
 
     // Specify the color for clearing <canvas>
@@ -267,13 +269,65 @@ function updateAnimationAngles() {
 
 }
 
+var g_eye = [0, 0, 3];
+var g_at = [0, 0, -100];
+var g_up = [0, 1, 0];
+var g_camera = new Camera();
+
+function keydown(ev) {
+    if (ev.keyCode == 65) {     // D
+        g_camera.eye.elements[0] -= 0.2;
+    }
+    else if (ev.keyCode == 68) {    // A
+        g_camera.eye.elements[0] += 0.2;
+    }
+    else if (ev.keyCode == 83) {  // S
+        g_camera.eye.elements[2] += 0.2;
+    }
+    else if (ev.keyCode == 87) {
+        g_camera.eye.elements[2] -= 0.2;  // W
+    }
+
+    renderAllShapes();
+    console.log(ev.keyCode);
+}
+
+var g_map = [
+[1, 1, 1, 1, 1, 1, 1, 1],
+[1, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 1, 1, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 1, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 1],
+[1, 0, 0, 0, 0, 0, 0, 1],
+];
+
+// function drawMap() {
+//     for (x=0; x<8; x++) {
+//         for (y=0; y<8; y++) {
+//             if (g_map[x][y] == 1) {
+//                 var body = new Cube();
+//                 body.color = [1.0, 1.0, 1.0, 1.0];
+//                 body.matrix.translate(x-4, -0.75, y-4);
+//                 body.render();
+//             }
+//         }
+//     }
+// }
+
 function renderAllShapes() {
     var startTime = performance.now();
 
     var projMat = new Matrix4();
+    projMat.setPerspective(30, 1*canvas.width/canvas.height, 1, 100);
     gl.uniformMatrix4fv(u_ProjectionMatrix, false, projMat.elements);
 
     var viewMat = new Matrix4();
+    viewMat.setLookAt(
+        g_camera.eye.elements[0], g_camera.eye.elements[1], g_camera.eye.elements[2],
+        g_camera.at.elements[0], g_camera.at.elements[1], g_camera.at.elements[2],
+        g_camera.up.elements[0], g_camera.up.elements[1], g_camera.up.elements[2]);
     gl.uniformMatrix4fv(u_ViewMatrix, false, viewMat.elements);
 
     var globalRotMat = new Matrix4().rotate(g_globalAngle, 0, 1, 0); 
@@ -290,6 +344,23 @@ function renderAllShapes() {
     var BROWN = [0.610, 0.603, 0.531, 1.0];
     var PINK = [0.830, 0.681, 0.681, 1.0];
     var WHITE = [1.0, 1.0, 1.0, 1.0];
+
+    // Skybox 
+    var sky = new Cube();
+    sky.color = [1.0, 0.0, 0.0, 1.0];
+    sky.textureNum = 0;
+    sky.matrix.scale(50, 50, 50);
+    sky.matrix.translate(-0.5, -0.5, -0.5);
+    sky.render();
+
+    // Floor
+    var floor = new Cube();
+    floor.color = [1.0, 0.0, 0.0, 1.0];
+    floor.textureNum = 1;
+    floor.matrix.translate(0, -0.75, 0.0);
+    floor.matrix.scale(10, 0, 10);
+    floor.matrix.translate(-0.5, 0.0, -0.5);
+    floor.render();
 
 
     // Bunny head
