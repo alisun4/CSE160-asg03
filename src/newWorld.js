@@ -350,15 +350,14 @@ var g_map = [
     
 
 function drawMap() {
-    for (x = 0; x < 16; x++) {
-        for (y = 0; y < 16; y++) {
+    for (x = 0; x < 32; x++) {
+        for (y = 0; y < 32; y++) {
             if (x < 1 || x == 31 || y == 0 || y ==31) {
                 var wall = new Cube();
-                wall.color = [0.8, 1.0, 1.0, 1.0];
-                wall.textureNum = -2;
+                wall.textureNum = 0;
                 wall.matrix.translate(0, -0.75, 0);
-                wall.matrix.scale(0.3, 0.3, 0.3);
-                wall.matrix.translate(x-8, 0, y-8);
+                wall.matrix.scale(0.3, 1.2, 0.3);
+                wall.matrix.translate(x-16, 0, y-16);
                 wall.renderfast();
             }
         }
@@ -409,6 +408,8 @@ function renderAllShapes() {
     floor.matrix.scale(10, 0.01, 10);
     floor.matrix.translate(-0.5, 0.0, -0.5);
     floor.render();
+
+    drawMap();
 
     // Bunny head
 
