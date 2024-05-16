@@ -21,6 +21,7 @@ var FSHADER_SOURCE = `
     uniform vec4 u_FragColor;  // uniform変数
     uniform sampler2D u_Sampler0;
     uniform sampler2D u_Sampler1;
+    uniform sampler2D u_Sampler2;
     uniform int u_whichTexture;
     void main() {
         if (u_whichTexture == -2) {
@@ -34,6 +35,9 @@ var FSHADER_SOURCE = `
         }
         else if (u_whichTexture == 1) {
             gl_FragColor = texture2D(u_Sampler1, v_UV);
+        }
+        else if (u_whichTexture == 2) {
+            gl_FragColor = texture2D(u_Sampler2, v_UV);
         }
         else {
             gl_FragColor = vec4(1,.2,.2,1);
@@ -53,6 +57,7 @@ let u_ViewMatrix;
 let u_GlobalRotateMatrix;
 let u_Sampler0;
 let u_Sampler1;
+let u_Sampler2;
 let u_whichTexture;
 let g_globalX = 0;
 let g_globalY = 0;
@@ -138,6 +143,12 @@ function connectVariablestoGLSL() {
         return;
     }
 
+    u_Sampler2 = gl.getUniformLocation(gl.program, 'u_Sampler2');
+    if (!u_Sampler0) {
+        console.log('Failed to get the storage location of u_Sampler2');
+        return;
+    }
+
     u_whichTexture = gl.getUniformLocation(gl.program, 'u_whichTexture');
     if (!u_whichTexture) {  
         console.log('Failed to get the storage location of u_whichTexture');
@@ -186,7 +197,7 @@ function initTextures() {
         return false;
     }
     image.onload = function(){ sendImagetoTexture0(image);}
-    image.src = 'bookshelves.jpg';
+    image.src = 'ice.jpg'
 
     var image2 = new Image();
     if (!image2) {
@@ -194,7 +205,15 @@ function initTextures() {
         return false;
     }
     image2.onload = function(){ sendImagetoTexture1(image2);}
-    image2.src = 'strawberry.jpg';
+    image2.src = 'snow.png';
+
+    var image3 = new Image();
+    if (!image3) {
+        console.log('Failed to create the image object');
+        return false;
+    }
+    image3.onload = function(){ sendImagetoTexture2(image3);}
+    image3.src = 'sky.jpg';
 
     return true;
 }
@@ -229,12 +248,59 @@ function sendImagetoTexture1(image) {
     console.log('Finished loadTexture');
 }
 
+function sendImagetoTexture2(image) {
+    var texture = gl.createTexture();
+    if (!texture) {
+        console.log('Failed to create the texture object');
+        return false;
+    }
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 1);
+    gl.activeTexture(gl.TEXTURE2);
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB, gl.RGB, gl.UNSIGNED_BYTE, image);
+    gl.uniform1i(u_Sampler2, 2);
+    console.log('Finished loadTexture');
+}
+
 function main() {
     setupWebGL();
     
     connectVariablestoGLSL();
 
     addActionsforHTMLUI();
+
+    // got help from tiffany guan on mouse rotation code
+
+    var mouseX = null;
+    var mouseY = null;
+    var mouseDown = false;
+
+    canvas.onmousedown = function(ev) {
+        mouseDown = true;
+        mouseX = ev.clientX;
+        mouseY = ev.clientY;
+    };
+
+    canvas.onmouseup = function(ev) {
+        mouseDown = false;
+    };
+
+    canvas.onmousemove = function(ev) {
+        if (mouseDown) {
+        // updated values of xyz
+        var newX = ev.clientX;
+        var newY = ev.clientY;
+
+        g_camera.at.elements[0] += (newX - mouseX) * 0.5;
+        g_camera.at.elements[1] += (newY - mouseY) * 0.5;
+
+        mouseX = newX;
+        mouseY = newY;
+
+        renderAllShapes();
+        }
+    };
 
     document.onkeydown = keydown;
 
@@ -325,7 +391,7 @@ function keydown(ev) {
         g_camera.panRight();
     }
 
-    else if(ev.keyCode == 82) { // R
+    else if (ev.keyCode == 82) { // R
         g_camera.panUp();
     } 
     
@@ -333,30 +399,62 @@ function keydown(ev) {
         g_camera.panDown();
     }
 
+    else if (ev.keyCode == 32) {    // Space
+        g_camera.eye.elements[1] += 0.2;
+    }
+
+    else if (ev.keyCode == 16) {    // Shift
+        g_camera.eye.elements[1] -= 0.2;
+    }
+
     renderAllShapes();
     console.log(ev.keyCode);
 }
 
 var g_map = [
-    [1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 1, 1, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 1, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //1
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //2
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //3
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //4
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //5
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //6
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //7
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //8
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //9
+    [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], //10
+    [0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0], //11
+    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0], //12
+    [0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], //13
+    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], //14
+    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], //15
+    [0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0], //16
+    [0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], //17
+    [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], //18
+    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], //19
+    [0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], //20
+    [0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], //21
+    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], //22
+    [0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0], //23
+    [0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0], //24
+    [0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0], //25
+    [0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0], //26
+    [0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0], //27
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0], //28
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //29
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //30
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //31
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], //32
 ];
     
 
 function drawMap() {
     for (x = 0; x < 32; x++) {
         for (y = 0; y < 32; y++) {
-            if (x < 1 || x == 31 || y == 0 || y ==31) {
+            if (g_map[x][y] ==  1) {
                 var wall = new Cube();
                 wall.textureNum = 0;
                 wall.matrix.translate(0, -0.75, 0);
-                wall.matrix.scale(0.3, 1.2, 0.3);
+                wall.matrix.scale(1, 3, 1);
                 wall.matrix.translate(x-16, 0, y-16);
                 wall.renderfast();
             }
@@ -395,19 +493,19 @@ function renderAllShapes() {
     // Skybox 
     var sky = new Cube();
     sky.color = [1.0, 0.0, 0.0, 1.0];
-    sky.textureNum = 0;
+    sky.textureNum = 2;
     sky.matrix.scale(50, 50, 50);
     sky.matrix.translate(-0.5, -0.5, -0.5);
-    sky.render();
+    sky.renderfast();
 
     // Floor
     var floor = new Cube();
     floor.color = [1.0, 0.0, 0.0, 1.0];
     floor.textureNum = 1;
     floor.matrix.translate(0, -0.75, 0.0);
-    floor.matrix.scale(10, 0.01, 10);
+    floor.matrix.scale(35, 0.01, 35);
     floor.matrix.translate(-0.5, 0.0, -0.5);
-    floor.render();
+    floor.renderfast();
 
     drawMap();
 

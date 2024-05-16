@@ -100,14 +100,7 @@ function drawTriangle3D(vertices) {
 }
 
 function drawTriangle3DUV(vertices, uv) {
-    var n = 3; // The number of vertices
-
-    // Create a buffer object
-    // var vertexBuffer = gl.createBuffer();
-    // if (!vertexBuffer) {
-    //     console.log('Failed to create the buffer object');
-    //     return -1;
-    // }
+    var n = vertices.length/3; // The number of vertices
 
     initTriangle3D();
 
